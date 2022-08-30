@@ -11,7 +11,7 @@
     </h4>
 </div>
 
-
+[![Go Reference](https://pkg.go.dev/badge/github.com/msrexe/patron.svg)](https://pkg.go.dev/github.com/msrexe/patron) [![Go Report Card](https://goreportcard.com/badge/github.com/msrexe/patron)](https://goreportcard.com/report/github.com/msrexe/patron) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/msrexe/patron) ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/msrexe/patron)
 
 ## Installation
 ```bash
