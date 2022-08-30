@@ -3,7 +3,7 @@ package patron
 type Worker interface {
 	GetID() int
 	GetJob() *Job
-	SetJob(job *Job)
+	SetJob(*Job)
 	FinalizeJob()
 	IsBusy() bool
 	Work() error

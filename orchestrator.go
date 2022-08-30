@@ -8,8 +8,8 @@ import (
 type WorkerOrchestrator interface {
 	GetQueueLength() int
 	AddJobToQueue(job *Job)
-	Start(ctx context.Context) []*WorkerResult
-	StartAsAsync(ctx context.Context, workerResultCh chan *WorkerResult)
+	Start(context.Context) []*WorkerResult
+	StartAsAsync(context.Context, chan *WorkerResult)
 }
 
 type workerOrchestrator struct {
