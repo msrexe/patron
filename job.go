@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ErrPayloadNotFound = errors.New("payload not found")
+	ErrJobPayloadNotFound = errors.New("payload not found")
 )
 
 type Job struct {
@@ -17,12 +17,12 @@ type Job struct {
 
 func (j *Job) GetPayload(key string) (interface{}, error) {
 	if j.Payload == nil {
-		return nil, ErrPayloadNotFound
+		return nil, ErrJobPayloadNotFound
 	}
 
 	val, ok := j.Payload[key]
 	if !ok {
-		return nil, ErrPayloadNotFound
+		return nil, ErrJobPayloadNotFound
 	}
 
 	return val, nil
