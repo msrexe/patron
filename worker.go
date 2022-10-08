@@ -12,18 +12,18 @@ type Worker interface {
 type worker struct {
 	id         int
 	job        *Job
-	workerFunc func(job *Job) error
+	workerFunc *func(job *Job) error
 }
 
 func NewWorkerArray(workerFunc func(job *Job) error, workersCount int) []Worker {
 	workers := make([]Worker, workersCount)
 	for i := 0; i < workersCount; i++ {
-		workers[i] = newWorker(i, workerFunc)
+		workers[i] = newWorker(i, &workerFunc)
 	}
 	return workers
 }
 
-func newWorker(id int, workerFunc func(job *Job) error) *worker {
+func newWorker(id int, workerFunc *func(job *Job) error) *worker {
 	return &worker{
 		id:         id,
 		workerFunc: workerFunc,
@@ -51,5 +51,6 @@ func (w *worker) IsBusy() bool {
 }
 
 func (w *worker) Work() error {
-	return w.workerFunc(w.job)
+	fun := *w.workerFunc
+	return fun(w.job)
 }
