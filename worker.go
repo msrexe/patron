@@ -1,22 +1,13 @@
 package patron
 
-type Worker interface {
-	GetID() int
-	GetJob() *Job
-	SetJob(*Job)
-	FinalizeJob()
-	IsBusy() bool
-	Work() error
-}
-
 type worker struct {
 	id         int
 	job        *Job
 	workerFunc *func(job *Job) error
 }
 
-func newWorkerArray(workerFunc func(job *Job) error, workerCount int) []Worker {
-	workers := make([]Worker, workerCount)
+func newWorkerArray(workerFunc func(job *Job) error, workerCount int) []*worker {
+	workers := make([]*worker, workerCount)
 
 	for i := 0; i < workerCount; i++ {
 		workers[i] = newWorker(i, &workerFunc)

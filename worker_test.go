@@ -12,7 +12,7 @@ import (
 type WorkerTestSuite struct {
 	suite.Suite
 
-	worker Worker
+	wrk *worker
 }
 
 func TestWorkerTestSuite(t *testing.T) {
@@ -30,9 +30,9 @@ func (suite *WorkerTestSuite) SetupTest() {
 		fmt.Printf("%d. job completed.\nJob payload name: %s\n", job.ID, payloadName)
 
 		return nil
-	}, 5)
+	}, 1)
 
-	suite.worker = workers[4]
+	suite.wrk = workers[0]
 }
 
 func (suite *WorkerTestSuite) TestNewWorkerArray() {
@@ -40,19 +40,19 @@ func (suite *WorkerTestSuite) TestNewWorkerArray() {
 }
 
 func (suite *WorkerTestSuite) TestGetID() {
-	suite.Equal(suite.worker.GetID(), 4)
+	suite.Equal(suite.wrk.GetID(), 4)
 }
 
 func (suite *WorkerTestSuite) TestGetJob() {
-	suite.worker.SetJob(&Job{
+	suite.wrk.SetJob(&Job{
 		ID: 10,
 	})
 
-	suite.Equal(suite.worker.GetJob().ID, 10)
+	suite.Equal(suite.wrk.GetJob().ID, 10)
 }
 
 func (suite *WorkerTestSuite) TestSetJob() {
-	suite.worker.SetJob(&Job{
+	suite.wrk.SetJob(&Job{
 		ID:      10,
 		Context: context.Background(),
 		Payload: map[string]interface{}{
@@ -61,30 +61,30 @@ func (suite *WorkerTestSuite) TestSetJob() {
 		},
 	})
 
-	suite.NotEmpty(suite.worker.GetJob())
+	suite.NotEmpty(suite.wrk.GetJob())
 }
 
 func (suite *WorkerTestSuite) TestFinalizeJob() {
-	suite.worker.SetJob(&Job{
+	suite.wrk.SetJob(&Job{
 		ID: 10,
 	})
-	suite.NotEmpty(suite.worker.GetJob())
+	suite.NotEmpty(suite.wrk.GetJob())
 
-	suite.worker.FinalizeJob()
-	suite.Empty(suite.worker.GetJob())
+	suite.wrk.FinalizeJob()
+	suite.Empty(suite.wrk.GetJob())
 }
 
 func (suite *WorkerTestSuite) TestIsBusy() {
-	suite.False(suite.worker.IsBusy())
+	suite.False(suite.wrk.IsBusy())
 
-	suite.worker.SetJob(&Job{
+	suite.wrk.SetJob(&Job{
 		ID: 10,
 	})
-	suite.True(suite.worker.IsBusy())
+	suite.True(suite.wrk.IsBusy())
 }
 
 func (suite *WorkerTestSuite) TestWorkSuccess() {
-	suite.worker.SetJob(&Job{
+	suite.wrk.SetJob(&Job{
 		ID:      10,
 		Context: context.Background(),
 		Payload: map[string]interface{}{
@@ -93,15 +93,15 @@ func (suite *WorkerTestSuite) TestWorkSuccess() {
 		},
 	})
 
-	suite.NoError(suite.worker.Work())
+	suite.NoError(suite.wrk.Work())
 }
 
 func (suite *WorkerTestSuite) TestWorkFailure() {
-	suite.worker.SetJob(&Job{
+	suite.wrk.SetJob(&Job{
 		ID:      10,
 		Context: context.Background(),
 		Payload: map[string]interface{}{},
 	})
 
-	suite.ErrorIs(suite.worker.Work(), ErrJobPayloadNotFound)
+	suite.ErrorIs(suite.wrk.Work(), ErrJobPayloadNotFound)
 }

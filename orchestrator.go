@@ -19,11 +19,11 @@ type Config struct {
 
 type workerOrchestrator struct {
 	jobQueue []*Job
-	workers  []Worker
+	workers  []*worker
 }
 
-// NewWorkerOrchestrator creates a new worker orchestrator.
-func NewWorkerOrchestrator(conf Config) WorkerOrchestrator {
+// Newcreates a new worker orchestrator.
+func New(conf Config) WorkerOrchestrator {
 	return &workerOrchestrator{
 		workers: newWorkerArray(conf.WorkerFunc, conf.WorkerCount),
 	}
@@ -72,20 +72,20 @@ func (wo *workerOrchestrator) Start(ctx context.Context) []*WorkerResult {
 
 	for i := 0; i < totalJobCount && wo.findAvailableWorker() != nil; i++ {
 		job := wo.consumeJobFromQueue()
-		worker := wo.findAvailableWorker()
-		worker.SetJob(job)
+		wrk := wo.findAvailableWorker()
+		wrk.SetJob(job)
 
 		wg.Add(1)
-		go func(worker Worker) {
-			defer worker.FinalizeJob()
+		go func(wrk *worker) {
+			defer wrk.FinalizeJob()
 			defer wg.Done()
 
 			workerResults = append(workerResults, &WorkerResult{
-				WorkerID: worker.GetID(),
-				JobID:    worker.GetJob().ID,
-				Error:    worker.Work(),
+				WorkerID: wrk.GetID(),
+				JobID:    wrk.GetJob().ID,
+				Error:    wrk.Work(),
 			})
-		}(worker)
+		}(wrk)
 	}
 
 	wg.Wait()
@@ -104,7 +104,7 @@ func (wo *workerOrchestrator) consumeJobFromQueue() *Job {
 	return nil
 }
 
-func (wo *workerOrchestrator) findAvailableWorker() Worker {
+func (wo *workerOrchestrator) findAvailableWorker() *worker {
 	for _, worker := range wo.workers {
 		if !worker.IsBusy() {
 			return worker
