@@ -21,17 +21,20 @@ func TestWorkerOrchestratorTestSuite(t *testing.T) {
 
 func (suite *WorkerOrchestratorTestSuite) SetupTest() {
 	workerOrchestrator := NewWorkerOrchestrator(
-		NewWorkerArray(func(job *Job) error {
-			time.Sleep(1 * time.Second)
-			payloadName, err := job.GetPayload("name")
-			if err != nil {
-				return err
-			}
+		Config{
+			WorkerCount: 5,
+			WorkerFunc: func(job *Job) error {
+				time.Sleep(1 * time.Second)
+				payloadName, err := job.GetPayload("name")
+				if err != nil {
+					return err
+				}
 
-			fmt.Printf("%d. job completed.\nJob payload name: %s\n", job.ID, payloadName)
+				fmt.Printf("%d. job completed.\nJob payload name: %s\n", job.ID, payloadName)
 
-			return nil
-		}, 5),
+				return nil
+			},
+		},
 	)
 
 	suite.workerOrchestrator = workerOrchestrator
@@ -39,7 +42,7 @@ func (suite *WorkerOrchestratorTestSuite) SetupTest() {
 
 func (suite *WorkerOrchestratorTestSuite) TestNewWorkerOrchestrator() {
 	suite.NotNil(NewWorkerOrchestrator(
-		NewWorkerArray(nil, 1),
+		Config{WorkerCount: 5, WorkerFunc: nil},
 	))
 }
 

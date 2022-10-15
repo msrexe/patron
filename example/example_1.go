@@ -11,11 +11,13 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Create new patron workers.
-	workers := patron.NewWorkerArray(workerFunction, 10)
-
 	// Start the orchestrator.
-	workerOrchestrator := patron.NewWorkerOrchestrator(workers)
+	workerOrchestrator := patron.NewWorkerOrchestrator(
+		patron.Config{
+			WorkerCount: 5,
+			WorkerFunc:  workerFunction,
+		},
+	)
 
 	// Add jobs to the orchestrator.
 	for i := 0; i < 10; i++ {
@@ -37,7 +39,6 @@ func main() {
 			fmt.Printf("Worker %d finished job %d\n", workerResult.WorkerID, workerResult.JobID)
 		}
 	}
-
 }
 
 func workerFunction(job *patron.Job) error {
