@@ -30,9 +30,9 @@ func (suite *WorkerTestSuite) SetupTest() {
 		fmt.Printf("%d. job completed.\nJob payload name: %s\n", job.ID, payloadName)
 
 		return nil
-	}, 1)
+	}, 2)
 
-	suite.wrk = workers[0]
+	suite.wrk = workers[1]
 }
 
 func (suite *WorkerTestSuite) TestNewWorkerArray() {
@@ -40,7 +40,7 @@ func (suite *WorkerTestSuite) TestNewWorkerArray() {
 }
 
 func (suite *WorkerTestSuite) TestGetID() {
-	suite.Equal(suite.wrk.GetID(), 4)
+	suite.Equal(1, suite.wrk.GetID())
 }
 
 func (suite *WorkerTestSuite) TestGetJob() {
@@ -48,7 +48,7 @@ func (suite *WorkerTestSuite) TestGetJob() {
 		ID: 10,
 	})
 
-	suite.Equal(suite.wrk.GetJob().ID, 10)
+	suite.Equal(10, suite.wrk.GetJob().ID)
 }
 
 func (suite *WorkerTestSuite) TestSetJob() {

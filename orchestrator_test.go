@@ -20,7 +20,7 @@ func TestWorkerOrchestratorTestSuite(t *testing.T) {
 }
 
 func (suite *WorkerOrchestratorTestSuite) SetupTest() {
-	workerOrchestrator := NewWorkerOrchestrator(
+	workerOrchestrator := New(
 		Config{
 			WorkerCount: 5,
 			WorkerFunc: func(job *Job) error {
@@ -41,7 +41,7 @@ func (suite *WorkerOrchestratorTestSuite) SetupTest() {
 }
 
 func (suite *WorkerOrchestratorTestSuite) TestNewWorkerOrchestrator() {
-	suite.NotNil(NewWorkerOrchestrator(
+	suite.NotNil(New(
 		Config{WorkerCount: 5, WorkerFunc: nil},
 	))
 }
@@ -57,33 +57,6 @@ func (suite *WorkerOrchestratorTestSuite) TestAddJobToQueue() {
 	})
 
 	suite.Equal(1, suite.workerOrchestrator.GetQueueLength())
-}
-
-// Note: this test is not reliable.
-func (suite *WorkerOrchestratorTestSuite) TestStartAsAsync() {
-	suite.T().Skip()
-
-	workerResultCh := make(chan *WorkerResult)
-	suite.workerOrchestrator.AddJobToQueue(&Job{
-		ID:      10,
-		Context: context.Background(),
-		Payload: map[string]interface{}{
-			"name":     "HTTP Request",
-			"dest_url": "http://localhost:8080/test",
-		},
-	})
-	suite.workerOrchestrator.AddJobToQueue(&Job{
-		ID:      11,
-		Context: context.Background(),
-		Payload: map[string]interface{}{
-			"name":     "HTTP Request",
-			"dest_url": "http://localhost:8080/test2",
-		},
-	})
-
-	suite.workerOrchestrator.StartAsAsync(context.Background(), workerResultCh)
-	suite.NotEmpty(<-workerResultCh)
-	suite.NotEmpty(<-workerResultCh)
 }
 
 func (suite *WorkerOrchestratorTestSuite) TestStartAllJobsSuccess() {
