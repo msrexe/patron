@@ -9,10 +9,8 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-
-	// Start the orchestrator.
-	workerOrchestrator := patron.NewWorkerOrchestrator(
+	// Create the orchestrator.
+	workerOrchestrator := patron.New(
 		patron.Config{
 			WorkerCount: 5,
 			WorkerFunc:  workerFunction,
@@ -23,7 +21,7 @@ func main() {
 	for i := 0; i < 10; i++ {
 		workerOrchestrator.AddJobToQueue(&patron.Job{
 			ID:      i,
-			Context: ctx,
+			Context: context.Background(),
 			Payload: map[string]interface{}{
 				"name": "HTTP Request #" + fmt.Sprintf("%d", i),
 			},
