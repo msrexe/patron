@@ -12,25 +12,34 @@ type WorkerOrchestrator interface {
 	StartAsAsync(context.Context, chan *WorkerResult)
 }
 
+type Config struct {
+	WorkerCount int
+	WorkerFunc  func(job *Job) error
+}
+
 type workerOrchestrator struct {
 	jobQueue []*Job
 	workers  []Worker
 }
 
-func NewWorkerOrchestrator(workers []Worker) WorkerOrchestrator {
+// NewWorkerOrchestrator creates a new worker orchestrator.
+func NewWorkerOrchestrator(conf Config) WorkerOrchestrator {
 	return &workerOrchestrator{
-		workers: workers,
+		workers: newWorkerArray(conf.WorkerFunc, conf.WorkerCount),
 	}
 }
 
+// AddJobToQueue adds a new job to the queue.
 func (wo *workerOrchestrator) AddJobToQueue(job *Job) {
 	wo.jobQueue = append(wo.jobQueue, job)
 }
 
+// GetQueueLength returns the length of the job queue.
 func (wo *workerOrchestrator) GetQueueLength() int {
 	return len(wo.jobQueue)
 }
 
+// TODO: Implement this method.
 func (wo *workerOrchestrator) StartAsAsync(ctx context.Context, workerResultCh chan *WorkerResult) {
 	var wg sync.WaitGroup
 

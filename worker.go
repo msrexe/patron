@@ -15,11 +15,13 @@ type worker struct {
 	workerFunc *func(job *Job) error
 }
 
-func NewWorkerArray(workerFunc func(job *Job) error, workersCount int) []Worker {
-	workers := make([]Worker, workersCount)
-	for i := 0; i < workersCount; i++ {
+func newWorkerArray(workerFunc func(job *Job) error, workerCount int) []Worker {
+	workers := make([]Worker, workerCount)
+
+	for i := 0; i < workerCount; i++ {
 		workers[i] = newWorker(i, &workerFunc)
 	}
+
 	return workers
 }
 

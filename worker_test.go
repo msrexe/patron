@@ -20,7 +20,7 @@ func TestWorkerTestSuite(t *testing.T) {
 }
 
 func (suite *WorkerTestSuite) SetupTest() {
-	workers := NewWorkerArray(func(job *Job) error {
+	workers := newWorkerArray(func(job *Job) error {
 		time.Sleep(1 * time.Second)
 		payloadName, err := job.GetPayload("name")
 		if err != nil {
@@ -36,7 +36,7 @@ func (suite *WorkerTestSuite) SetupTest() {
 }
 
 func (suite *WorkerTestSuite) TestNewWorkerArray() {
-	suite.Len(NewWorkerArray(nil, 2), 2)
+	suite.Len(newWorkerArray(nil, 2), 2)
 }
 
 func (suite *WorkerTestSuite) TestGetID() {
