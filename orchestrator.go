@@ -8,8 +8,7 @@ import (
 type WorkerOrchestrator interface {
 	GetQueueLength() int
 	AddJobToQueue(job *Job)
-	Start(context.Context) []*WorkerResult
-	StartAsAsync(context.Context, chan *WorkerResult)
+	Start(context.Context) []WorkerResult
 }
 
 type Config struct {
@@ -19,11 +18,11 @@ type Config struct {
 
 type workerOrchestrator struct {
 	jobQueue []*Job
-	workers  []Worker
+	workers  []*worker
 }
 
-// NewWorkerOrchestrator creates a new worker orchestrator.
-func NewWorkerOrchestrator(conf Config) WorkerOrchestrator {
+// Newcreates a new worker orchestrator.
+func New(conf Config) WorkerOrchestrator {
 	return &workerOrchestrator{
 		workers: newWorkerArray(conf.WorkerFunc, conf.WorkerCount),
 	}
@@ -40,55 +39,49 @@ func (wo *workerOrchestrator) GetQueueLength() int {
 }
 
 // TODO: Implement this method.
-func (wo *workerOrchestrator) StartAsAsync(ctx context.Context, workerResultCh chan *WorkerResult) {
-	var wg sync.WaitGroup
+// func (wo *workerOrchestrator) StartAsAsync(ctx context.Context, workerResultCh chan *WorkerResult)
 
-	for job := wo.consumeJobFromQueue(); job != nil; job = wo.consumeJobFromQueue() {
-		for worker := wo.findAvailableWorker(); worker != nil; worker = wo.findAvailableWorker() {
-			worker.SetJob(job)
+// Start starts all the jobs in the queue.
+func (wo *workerOrchestrator) Start(ctx context.Context) []WorkerResult {
+	var wg sync.WaitGroup
+	var workerResult *WorkerResult
+	var workerResults []WorkerResult
+
+	totalJobCount := wo.GetQueueLength()
+	resultCh := make(chan *WorkerResult, totalJobCount)
+
+	for i := 0; i < totalJobCount; {
+		if wo.findAvailableWorker() != nil {
+			job := wo.consumeJobFromQueue()
+			wrk := wo.findAvailableWorker()
+			wrk.SetJob(job)
 
 			wg.Add(1)
-			go func(worker Worker) {
-				defer worker.FinalizeJob()
+			go func(wrk *worker, resultCh chan *WorkerResult) {
+				defer wrk.FinalizeJob()
 				defer wg.Done()
 
-				workerResultCh <- &WorkerResult{
-					WorkerID: worker.GetID(),
-					JobID:    worker.GetJob().ID,
-					Error:    worker.Work(),
+				resultCh <- &WorkerResult{
+					WorkerID: wrk.GetID(),
+					JobID:    wrk.GetJob().ID,
+					Error:    wrk.Work(),
 				}
-			}(worker)
+			}(wrk, resultCh)
+
+			i++
+		} else {
+			// If no available worker, waits for a worker to be free
+			workerResult = <-resultCh
+			workerResults = append(workerResults, *workerResult)
 		}
 	}
 
 	wg.Wait()
-}
+	close(resultCh)
 
-func (wo *workerOrchestrator) Start(ctx context.Context) []*WorkerResult {
-	var wg sync.WaitGroup
-	var workerResults []*WorkerResult
-
-	totalJobCount := wo.GetQueueLength()
-
-	for i := 0; i < totalJobCount && wo.findAvailableWorker() != nil; i++ {
-		job := wo.consumeJobFromQueue()
-		worker := wo.findAvailableWorker()
-		worker.SetJob(job)
-
-		wg.Add(1)
-		go func(worker Worker) {
-			defer worker.FinalizeJob()
-			defer wg.Done()
-
-			workerResults = append(workerResults, &WorkerResult{
-				WorkerID: worker.GetID(),
-				JobID:    worker.GetJob().ID,
-				Error:    worker.Work(),
-			})
-		}(worker)
+	for result := range resultCh {
+		workerResults = append(workerResults, *result)
 	}
-
-	wg.Wait()
 
 	return workerResults
 }
@@ -104,7 +97,7 @@ func (wo *workerOrchestrator) consumeJobFromQueue() *Job {
 	return nil
 }
 
-func (wo *workerOrchestrator) findAvailableWorker() Worker {
+func (wo *workerOrchestrator) findAvailableWorker() *worker {
 	for _, worker := range wo.workers {
 		if !worker.IsBusy() {
 			return worker
