@@ -28,4 +28,8 @@ go.work
 /vendor/
 /Godeps/
 
+
+# TestData
+_test/
+
 # End of https://www.toptal.com/developers/gitignore/api/go
