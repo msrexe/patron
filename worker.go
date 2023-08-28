@@ -3,10 +3,10 @@ package patron
 type worker struct {
 	id         int
 	job        *Job
-	workerFunc *func(job *Job) error
+	workerFunc func(job *Job) error
 }
 
-func newWorkerArray(workerFunc *func(job *Job) error, workerCount int) []*worker {
+func newWorkerArray(workerFunc func(job *Job) error, workerCount int) []*worker {
 	workers := make([]*worker, workerCount)
 
 	for i := 0; i < workerCount; i++ {
@@ -16,7 +16,7 @@ func newWorkerArray(workerFunc *func(job *Job) error, workerCount int) []*worker
 	return workers
 }
 
-func newWorker(id int, workerFunc *func(job *Job) error) *worker {
+func newWorker(id int, workerFunc func(job *Job) error) *worker {
 	return &worker{
 		id:         id,
 		workerFunc: workerFunc,
@@ -44,6 +44,5 @@ func (w *worker) IsBusy() bool {
 }
 
 func (w *worker) Work() error {
-	fun := *w.workerFunc
-	return fun(w.job)
+	return w.workerFunc(w.job)
 }

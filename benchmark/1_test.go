@@ -34,6 +34,7 @@ var (
 )
 
 // BenchmarkPatron-8   	  355014	      5317 ns/op	     735 B/op	       7 allocs/op
+// BenchmarkPatron-8   	  390490	      5416 ns/op	     296 B/op	       3 allocs/op
 func BenchmarkPatron(b *testing.B) {
 	orc := patron.New(patron.Config{
 		WorkerCount: 5,
@@ -55,6 +56,7 @@ func BenchmarkPatron(b *testing.B) {
 }
 
 // BenchmarkClassicPoolImpl-8   	20819346	        70.12 ns/op	      13 B/op	       0 allocs/op
+// BenchmarkClassicPoolImpl-8   	21875970	        61.93 ns/op	       7 B/op	       0 allocs/op
 func BenchmarkClassicPoolImpl(b *testing.B) {
 	numJobs := b.N
 

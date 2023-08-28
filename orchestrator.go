@@ -26,7 +26,7 @@ type workerOrchestrator struct {
 // Newcreates a new worker orchestrator.
 func New(conf Config) WorkerOrchestrator {
 	return &workerOrchestrator{
-		workers: newWorkerArray(&conf.WorkerFunc, conf.WorkerCount),
+		workers: newWorkerArray(conf.WorkerFunc, conf.WorkerCount),
 	}
 }
 

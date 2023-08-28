@@ -34,7 +34,7 @@ func TestWorkerTestSuite(t *testing.T) {
 }
 
 func (suite *WorkerTestSuite) SetupTest() {
-	workers := newWorkerArray(&workerFunc, 2)
+	workers := newWorkerArray(workerFunc, 2)
 
 	suite.wrk = workers[1]
 }
