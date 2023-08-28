@@ -17,14 +17,16 @@ type Config struct {
 }
 
 type workerOrchestrator struct {
-	jobQueue []*Job
-	workers  []*worker
+	jobQueue      []*Job
+	jobQueueIndex int
+
+	workers []*worker
 }
 
 // Newcreates a new worker orchestrator.
 func New(conf Config) WorkerOrchestrator {
 	return &workerOrchestrator{
-		workers: newWorkerArray(conf.WorkerFunc, conf.WorkerCount),
+		workers: newWorkerArray(&conf.WorkerFunc, conf.WorkerCount),
 	}
 }
 
@@ -35,7 +37,7 @@ func (wo *workerOrchestrator) AddJobToQueue(job *Job) {
 
 // GetQueueLength returns the length of the job queue.
 func (wo *workerOrchestrator) GetQueueLength() int {
-	return len(wo.jobQueue)
+	return len(wo.jobQueue) - wo.jobQueueIndex
 }
 
 // TODO: Implement this method.
@@ -87,13 +89,13 @@ func (wo *workerOrchestrator) Start(ctx context.Context) []WorkerResult {
 }
 
 func (wo *workerOrchestrator) consumeJobFromQueue() *Job {
-	if len(wo.jobQueue) > 0 {
-		job := wo.jobQueue[0]
-		wo.jobQueue[0] = nil
-		wo.jobQueue = wo.jobQueue[1:]
+	if wo.GetQueueLength() > 0 && wo.jobQueueIndex < len(wo.jobQueue) {
+		job := wo.jobQueue[wo.jobQueueIndex]
+		wo.jobQueueIndex++
 		return job
 	}
 
+	wo.jobQueueIndex = 0
 	return nil
 }
 

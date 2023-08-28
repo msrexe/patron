@@ -9,6 +9,20 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var (
+	workerFunc = func(job *Job) error {
+		time.Sleep(1 * time.Second)
+		payloadName, err := job.GetPayload("name")
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("%d. job completed.\nJob payload name: %s\n", job.ID, payloadName)
+
+		return nil
+	}
+)
+
 type WorkerTestSuite struct {
 	suite.Suite
 
@@ -20,17 +34,7 @@ func TestWorkerTestSuite(t *testing.T) {
 }
 
 func (suite *WorkerTestSuite) SetupTest() {
-	workers := newWorkerArray(func(job *Job) error {
-		time.Sleep(1 * time.Second)
-		payloadName, err := job.GetPayload("name")
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("%d. job completed.\nJob payload name: %s\n", job.ID, payloadName)
-
-		return nil
-	}, 2)
+	workers := newWorkerArray(&workerFunc, 2)
 
 	suite.wrk = workers[1]
 }

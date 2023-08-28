@@ -6,11 +6,11 @@ type worker struct {
 	workerFunc *func(job *Job) error
 }
 
-func newWorkerArray(workerFunc func(job *Job) error, workerCount int) []*worker {
+func newWorkerArray(workerFunc *func(job *Job) error, workerCount int) []*worker {
 	workers := make([]*worker, workerCount)
 
 	for i := 0; i < workerCount; i++ {
-		workers[i] = newWorker(i, &workerFunc)
+		workers[i] = newWorker(i, workerFunc)
 	}
 
 	return workers
