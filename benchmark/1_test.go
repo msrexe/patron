@@ -33,8 +33,8 @@ var (
 	}
 )
 
-// BenchmarkPatron-8   	  355014	      5317 ns/op	     735 B/op	       7 allocs/op
-// BenchmarkPatron-8   	  390490	      5416 ns/op	     296 B/op	       3 allocs/op
+// To be improved in the future
+// BenchmarkPatron-8   	  568000	      5868 ns/op	     843 B/op	       0 allocs/op
 func BenchmarkPatron(b *testing.B) {
 	orc := patron.New(patron.Config{
 		WorkerCount: 5,

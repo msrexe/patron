@@ -7,7 +7,14 @@ type worker struct {
 }
 
 func newWorkerArray(workerFunc func(job *Job) error, workerCount int) []*worker {
-	workers := make([]*worker, workerCount)
+	switch {
+	case workerCount <= 0:
+		workerCount = DEFAULT_WORKER_COUNT
+	case workerCount > MAX_WORKER_COUNT:
+		workerCount = MAX_WORKER_COUNT
+	}
+
+	workers := make([]*worker, workerCount, MAX_WORKER_COUNT)
 
 	for i := 0; i < workerCount; i++ {
 		workers[i] = newWorker(i, workerFunc)
