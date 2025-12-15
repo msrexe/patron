@@ -2,30 +2,19 @@ package patron
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/suite"
 )
 
-type WorkerOrchestratorTestSuite struct {
-	suite.Suite
-
-	workerOrchestrator WorkerOrchestrator
-}
-
-func TestWorkerOrchestratorTestSuite(t *testing.T) {
-	suite.Run(t, new(WorkerOrchestratorTestSuite))
-}
-
-func (suite *WorkerOrchestratorTestSuite) SetupTest() {
-	workerOrchestrator := New(
+func setupTestOrchestrator() WorkerOrchestrator {
+	return New(
 		Config{
 			WorkerCount: 5,
 			WorkerFunc: func(job *Job) error {
 				time.Sleep(1 * time.Second)
-				payloadName, err := job.GetPayload("name")
+				payloadName, err := job.Get("name")
 				if err != nil {
 					return err
 				}
@@ -36,18 +25,19 @@ func (suite *WorkerOrchestratorTestSuite) SetupTest() {
 			},
 		},
 	)
-
-	suite.workerOrchestrator = workerOrchestrator
 }
 
-func (suite *WorkerOrchestratorTestSuite) TestNewWorkerOrchestrator() {
-	suite.NotNil(New(
-		Config{WorkerCount: 5, WorkerFunc: nil},
-	))
+func TestNewWorkerOrchestrator(t *testing.T) {
+	orch := New(Config{WorkerCount: 5, WorkerFunc: nil})
+	if orch == nil {
+		t.Error("Expected new worker orchestrator to be not nil")
+	}
 }
 
-func (suite *WorkerOrchestratorTestSuite) TestAddJobToQueue() {
-	suite.workerOrchestrator.AddJobToQueue(&Job{
+func TestAddJobToQueue(t *testing.T) {
+	workerOrchestrator := setupTestOrchestrator()
+
+	workerOrchestrator.AddJobToQueue(&Job{
 		ID:      10,
 		Context: context.Background(),
 		Payload: map[string]interface{}{
@@ -56,11 +46,15 @@ func (suite *WorkerOrchestratorTestSuite) TestAddJobToQueue() {
 		},
 	})
 
-	suite.Equal(1, suite.workerOrchestrator.GetQueueLength())
+	if len := workerOrchestrator.GetQueueLength(); len != 1 {
+		t.Errorf("Expected queue length 1, got %d", len)
+	}
 }
 
-func (suite *WorkerOrchestratorTestSuite) TestStartAllJobsSuccess() {
-	suite.workerOrchestrator.AddJobToQueue(&Job{
+func TestStartAllJobsSuccess(t *testing.T) {
+	workerOrchestrator := setupTestOrchestrator()
+
+	workerOrchestrator.AddJobToQueue(&Job{
 		ID:      10,
 		Context: context.Background(),
 		Payload: map[string]interface{}{
@@ -68,7 +62,7 @@ func (suite *WorkerOrchestratorTestSuite) TestStartAllJobsSuccess() {
 			"dest_url": "http://localhost:8080/test",
 		},
 	})
-	suite.workerOrchestrator.AddJobToQueue(&Job{
+	workerOrchestrator.AddJobToQueue(&Job{
 		ID:      11,
 		Context: context.Background(),
 		Payload: map[string]interface{}{
@@ -77,15 +71,23 @@ func (suite *WorkerOrchestratorTestSuite) TestStartAllJobsSuccess() {
 		},
 	})
 
-	results := suite.workerOrchestrator.Start(context.Background())
+	results := workerOrchestrator.Start(context.Background())
 
-	suite.Len(results, 2)
-	suite.Equal(nil, results[0].Error)
-	suite.Equal(nil, results[1].Error)
+	if len(results) != 2 {
+		t.Errorf("Expected 2 results, got %d", len(results))
+	}
+	if results[0].Error != nil {
+		t.Errorf("Expected no error for job 1, got %v", results[0].Error)
+	}
+	if results[1].Error != nil {
+		t.Errorf("Expected no error for job 2, got %v", results[1].Error)
+	}
 }
 
-func (suite *WorkerOrchestratorTestSuite) TestStartOneJobFailure() {
-	suite.workerOrchestrator.AddJobToQueue(&Job{
+func TestStartOneJobFailure(t *testing.T) {
+	workerOrchestrator := setupTestOrchestrator()
+
+	workerOrchestrator.AddJobToQueue(&Job{
 		ID:      10,
 		Context: context.Background(),
 		Payload: map[string]interface{}{
@@ -93,20 +95,27 @@ func (suite *WorkerOrchestratorTestSuite) TestStartOneJobFailure() {
 			"dest_url": "http://localhost:8080/test",
 		},
 	})
-	suite.workerOrchestrator.AddJobToQueue(&Job{
+	workerOrchestrator.AddJobToQueue(&Job{
 		ID:      11,
 		Context: context.Background(),
 		Payload: map[string]interface{}{},
 	})
 
-	results := suite.workerOrchestrator.Start(context.Background())
+	results := workerOrchestrator.Start(context.Background())
 
-	suite.Len(results, 2)
+	if len(results) != 2 {
+		t.Errorf("Expected 2 results, got %d", len(results))
+	}
+
 	for _, result := range results {
 		if result.JobID == 11 {
-			suite.ErrorIs(result.Error, ErrJobPayloadNotFound)
+			if !errors.Is(result.Error, ErrJobPayloadNotFound) {
+				t.Errorf("Expected ErrJobPayloadNotFound for job 11, got %v", result.Error)
+			}
 		} else {
-			suite.Equal(nil, result.Error)
+			if result.Error != nil {
+				t.Errorf("Expected no error for job %d, got %v", result.JobID, result.Error)
+			}
 		}
 	}
 }

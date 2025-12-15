@@ -17,92 +17,97 @@ type Config struct {
 }
 
 type workerOrchestrator struct {
-	jobQueue []*Job
-	workers  []*worker
+	workerCount int
+	workerFunc  func(job *Job) error
+	jobs        []*Job
+	mu          sync.Mutex
 }
 
-// Newcreates a new worker orchestrator.
+// New creates a new worker orchestrator.
 func New(conf Config) WorkerOrchestrator {
 	return &workerOrchestrator{
-		workers: newWorkerArray(conf.WorkerFunc, conf.WorkerCount),
+		workerCount: conf.WorkerCount,
+		workerFunc:  conf.WorkerFunc,
+		jobs:        make([]*Job, 0),
 	}
 }
 
 // AddJobToQueue adds a new job to the queue.
 func (wo *workerOrchestrator) AddJobToQueue(job *Job) {
-	wo.jobQueue = append(wo.jobQueue, job)
+	wo.mu.Lock()
+	defer wo.mu.Unlock()
+	wo.jobs = append(wo.jobs, job)
 }
 
 // GetQueueLength returns the length of the job queue.
 func (wo *workerOrchestrator) GetQueueLength() int {
-	return len(wo.jobQueue)
+	wo.mu.Lock()
+	defer wo.mu.Unlock()
+	return len(wo.jobs)
 }
 
-// TODO: Implement this method.
-// func (wo *workerOrchestrator) StartAsAsync(ctx context.Context, workerResultCh chan *WorkerResult)
-
-// Start starts all the jobs in the queue.
+// Start starts all the jobs in the queue using a worker pool.
 func (wo *workerOrchestrator) Start(ctx context.Context) []WorkerResult {
+	// If no jobs, return empty
+	wo.mu.Lock()
+	jobCount := len(wo.jobs)
+	jobs := wo.jobs
+	wo.mu.Unlock()
+
+	if jobCount == 0 {
+		return nil
+	}
+
+	jobsCh := make(chan *Job, jobCount)
+	resultsCh := make(chan WorkerResult, jobCount)
 	var wg sync.WaitGroup
-	var workerResult *WorkerResult
-	var workerResults []WorkerResult
 
-	totalJobCount := wo.GetQueueLength()
-	resultCh := make(chan *WorkerResult, totalJobCount)
+	// Push all jobs to channel
+	for _, job := range jobs {
+		jobsCh <- job
+	}
+	close(jobsCh)
 
-	for i := 0; i < totalJobCount; {
-		if wo.findAvailableWorker() != nil {
-			job := wo.consumeJobFromQueue()
-			wrk := wo.findAvailableWorker()
-			wrk.SetJob(job)
+	// Start workers
+	// If jobCount < workerCount, we only need jobCount workers (optimization)
+	workersToStart := wo.workerCount
+	if jobsChLen := len(jobs); jobsChLen < workersToStart {
+		// workersToStart = jobsChLen // Optional optimization, but maybe overhead to logic
+	}
 
-			wg.Add(1)
-			go func(wrk *worker, resultCh chan *WorkerResult) {
-				defer wrk.FinalizeJob()
-				defer wg.Done()
-
-				resultCh <- &WorkerResult{
-					WorkerID: wrk.GetID(),
-					JobID:    wrk.GetJob().ID,
-					Error:    wrk.Work(),
+	for i := 0; i < workersToStart; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			for job := range jobsCh {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					err := wo.workerFunc(job)
+					resultsCh <- WorkerResult{
+						WorkerID: workerID,
+						JobID:    job.ID,
+						Error:    err,
+					}
 				}
-			}(wrk, resultCh)
-
-			i++
-		} else {
-			// If no available worker, waits for a worker to be free
-			workerResult = <-resultCh
-			workerResults = append(workerResults, *workerResult)
-		}
+			}
+		}(i)
 	}
 
 	wg.Wait()
-	close(resultCh)
+	close(resultsCh)
 
-	for result := range resultCh {
-		workerResults = append(workerResults, *result)
+	var results []WorkerResult
+	for res := range resultsCh {
+		results = append(results, res)
 	}
 
-	return workerResults
-}
+	// Clear the queue after processing?
+	// The original implementation seemed to consume them.
+	wo.mu.Lock()
+	wo.jobs = nil
+	wo.mu.Unlock()
 
-func (wo *workerOrchestrator) consumeJobFromQueue() *Job {
-	if len(wo.jobQueue) > 0 {
-		job := wo.jobQueue[0]
-		wo.jobQueue[0] = nil
-		wo.jobQueue = wo.jobQueue[1:]
-		return job
-	}
-
-	return nil
-}
-
-func (wo *workerOrchestrator) findAvailableWorker() *worker {
-	for _, worker := range wo.workers {
-		if !worker.IsBusy() {
-			return worker
-		}
-	}
-
-	return nil
+	return results
 }

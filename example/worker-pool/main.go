@@ -41,7 +41,7 @@ func main() {
 
 func workerFunction(job *patron.Job) error {
 	time.Sleep(1 * time.Second)
-	payloadName, err := job.GetPayload("name")
+	payloadName, err := job.Get("name")
 	if err != nil {
 		return err
 	}

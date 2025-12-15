@@ -15,15 +15,13 @@ type Job struct {
 	Payload map[string]interface{}
 }
 
-func (j *Job) GetPayload(key string) (interface{}, error) {
+func (j *Job) Get(key string) (interface{}, error) {
 	if j.Payload == nil {
 		return nil, ErrJobPayloadNotFound
 	}
-
 	val, ok := j.Payload[key]
 	if !ok {
 		return nil, ErrJobPayloadNotFound
 	}
-
 	return val, nil
 }
