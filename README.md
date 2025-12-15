@@ -14,7 +14,7 @@
 
 - **Worker Orchestrator**: A managed pool of workers for executing jobs with payloads and error handling. Ideal for heavy or distinct tasks.
 - **ForEach Iterator**: A lightweight, high-performance parallel iterator for slices. Optimized with atomic counters and zero-allocation logic where possible.
-- **Production Ready**: Proven performance and stability (see `BENCHMARK.md`).
+- **Production Ready**: Proven performance and stability (see `benchmark/BENCHMARK.md`).
 
 ## Installation
 
@@ -69,7 +69,7 @@ results := orch.Start(context.Background())
 
 Patron is designed to be fast. In our benchmarks, `patron.ForEach` performs competitively with top libraries like `sourcegraph/conc` while maintaining lower memory allocations.
 
-See [BENCHMARK.md](BENCHMARK.md) for detailed comparisons.
+See [BENCHMARK.md](benchmark/BENCHMARK.md) for detailed comparisons.
 
 ## Contributing
 
